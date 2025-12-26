@@ -10,7 +10,7 @@ durationpy==0.10
 email-validator==2.3.0
 fastapi==0.121.3
 fastapi-cli==0.0.16
-fastapi-cloud-cli==0.4.0
+fastapi-cloud-cli==0.5.2
 fastar==0.6.0
 google-auth==2.43.0
 h11==0.16.0
