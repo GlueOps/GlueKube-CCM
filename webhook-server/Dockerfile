@@ -1,5 +1,5 @@
 
-FROM python:3.12
+FROM python:3.12@sha256:f742af2ba32cd619634370fddbb39ae8539ad84163da52d63a822a04ac2732a1
 
 
 WORKDIR /code
