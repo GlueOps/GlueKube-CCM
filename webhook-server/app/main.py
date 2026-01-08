@@ -1,4 +1,3 @@
-
 from typing import Union
 
 from fastapi import FastAPI
@@ -81,7 +80,30 @@ def sync(request: dict):
     v1 = client.CoreV1Api()
     nodes = v1.list_node()
 
+    # START: Check which nodes have active pods for this service
+    selector = service['spec'].get('selector', {})
+    nodes_with_active_pods = set()
+    
+    if selector:
+        label_selector = ",".join([f"{k}={v}" for k, v in selector.items()])
+        try:
+            pods = v1.list_namespaced_pod(
+                namespace=service['metadata']['namespace'],
+                label_selector=label_selector
+            )
+            for pod in pods.items:
+                # Check if pod is Running and Ready
+                if pod.status.phase == 'Running' and pod.spec.node_name:
+                    conditions = pod.status.conditions or []
+                    is_pod_ready = any(c.type == 'Ready' and c.status == 'True' for c in conditions)
+                    if is_pod_ready:
+                        nodes_with_active_pods.add(pod.spec.node_name)
+        except Exception as e:
+            print(f"Error listing pods: {e}")
+    # END: Check which nodes have active pods for this service
+
     print(f"Processing Service {service['metadata']['name']} with loadbalancer label value: {service_loadbalancer_label_value}")
+    print(f"Nodes hosting ready pods: {nodes_with_active_pods}")
 
     for node in nodes.items:
         # 1. Check if Node is Ready
@@ -92,12 +114,15 @@ def sync(request: dict):
         labels = node.metadata.labels
         match_lb = labels.get('use-as-loadbalancer') == service_loadbalancer_label_value
         
+        # 3. Check if node is actually hosting a pod
+        has_active_pod = node.metadata.name in nodes_with_active_pods
+        
         # get internal ip
         
-        if is_ready and match_lb:
-            # 3. Extract Public IP
-            pub_ip = labels['node-public-ip']
-            privte_ip = labels['node-private-ip']
+        if is_ready and match_lb and has_active_pod:
+            # 4. Extract Public IP
+            pub_ip = labels.get('node-public-ip')
+            privte_ip = labels.get('node-private-ip')
 
             if pub_ip:
                 healthy_ips.append(pub_ip)
@@ -210,5 +235,3 @@ def finilize(request: dict):
             }
         }
     }
-
-
