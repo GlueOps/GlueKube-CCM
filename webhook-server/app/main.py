@@ -50,6 +50,25 @@ def apply_custom_object(group, version, namespace, plural, body):
             raise e
 
 
+
+def get_nodes_of_service_running_pods(v1, namespace:str, service_selectors: dict[str]) -> list[str]:
+    label_selector = ",".join(
+        f"{k}={v}" for k, v in service_selectors.items()
+    )
+
+    pods = v1.list_namespaced_pod(
+        namespace=namespace,
+        label_selector=label_selector
+    )
+    nodes = {
+        pod.spec.node_name
+        for pod in pods.items
+        if pod.spec.node_name  # exclude unscheduled pods
+    }
+    print(f"nodes where pods are scheduled: {nodes}")
+    return nodes
+
+
 @app.post("/sync")
 def sync(request: dict):
     service = request['object']
@@ -81,9 +100,13 @@ def sync(request: dict):
     v1 = client.CoreV1Api()
     nodes = v1.list_node()
 
+    nodes_with_scheduled_pods_on = get_nodes_of_service_running_pods(v1,service['metadata']['metadata'], service['spec']['selector'])
+
     print(f"Processing Service {service['metadata']['name']} with loadbalancer label value: {service_loadbalancer_label_value}")
 
     for node in nodes.items:
+        if not (node.metadata.name in nodes_with_scheduled_pods_on):
+            continue 
         # 1. Check if Node is Ready
         conditions = node.status.conditions
         is_ready = any(c.type == 'Ready' and c.status == 'True' for c in conditions)
