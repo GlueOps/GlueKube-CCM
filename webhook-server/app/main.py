@@ -100,7 +100,7 @@ def sync(request: dict):
     v1 = client.CoreV1Api()
     nodes = v1.list_node()
 
-    nodes_with_scheduled_pods_on = get_nodes_of_service_running_pods(v1,service['metadata']['metadata'], service['spec']['selector'])
+    nodes_with_scheduled_pods_on = get_nodes_of_service_running_pods(v1,service['metadata']['namespace'], service['spec']['selector'])
 
     print(f"Processing Service {service['metadata']['name']} with loadbalancer label value: {service_loadbalancer_label_value}")
 
