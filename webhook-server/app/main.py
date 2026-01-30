@@ -63,7 +63,7 @@ def get_nodes_of_service_running_pods(v1, namespace:str, service_selectors: dict
     nodes = {
         pod.spec.node_name
         for pod in pods.items
-        if pod.spec.node_name  # exclude unscheduled pods
+        if pod.spec.node_name and pod.metadata.deletion_timestamp is None
     }
     print(f"nodes where pods are scheduled: {nodes}")
     return nodes
