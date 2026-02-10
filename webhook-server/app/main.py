@@ -73,6 +73,7 @@ def get_nodes_of_service_running_pods(v1, namespace:str, service_selectors: dict
 def sync(request: dict):
     service = request['object']
     service_loadbalancer_label_value = service['metadata']['labels']['use-as-loadbalancer']
+    is_private = "internal" in service_loadbalancer_label_value
     dnsName = service['metadata']['labels']['gluekube-dns']
     dns_endpoint = {
         "apiVersion": "externaldns.k8s.io/v1alpha1",
@@ -92,7 +93,7 @@ def sync(request: dict):
             ]
         }
     }
-    healthy_ips = []
+    public_ips = []
     private_ips = []
     
     config.load_incluster_config()
@@ -120,14 +121,18 @@ def sync(request: dict):
         if is_ready and match_lb:
             # 3. Extract Public IP
             pub_ip = labels['node-public-ip']
-            privte_ip = labels['node-private-ip']
-
+            private_ip = labels['node-private-ip']
+            
+            
             if pub_ip:
-                healthy_ips.append(pub_ip)
-                private_ips.append(privte_ip)
+                public_ips.append(pub_ip)
+                private_ips.append(private_ip)
     
-    print(f"Healthy IPs for Service {service['metadata']['name']}: {healthy_ips}")
-    dns_endpoint['spec']['endpoints'][0]['targets'] = healthy_ips
+    print(f"Healthy IPs for Service {service['metadata']['name']}: {public_ips}")
+    if not is_private:
+        dns_endpoint['spec']['endpoints'][0]['targets'] = public_ips
+    else:
+        dns_endpoint['spec']['endpoints'][0]['targets'] = private_ips
     apply_custom_object(
         group=group,
         version=version,
@@ -135,6 +140,18 @@ def sync(request: dict):
         plural=plural,
         body=dns_endpoint
     )
+    if is_private:
+        print(f"Service {service['metadata']['name']} is marked as private. Skipping internal service creation.")
+        return {
+            "status": {
+                "loadBalancer": {
+                    "ingress": [
+                        {"hostname": dnsName}
+                    ]
+                }
+            }
+        }
+    # 3. Create or Update Internal Service
     service_ports: list[client.V1ServicePort] = []
     for port in service['spec']['ports']:
         service_ports.append(
@@ -156,7 +173,7 @@ def sync(request: dict):
             selector=service['spec']['selector'],
             ports=service_ports,
             type="ClusterIP",
-            external_i_ps=healthy_ips+private_ips,
+            external_i_ps=public_ips+private_ips,
             external_traffic_policy=service['spec'].get('externalTrafficPolicy'),
             ip_family_policy=service['spec'].get('ipFamilyPolicy'),
             session_affinity=service['spec'].get('sessionAffinity')
@@ -201,7 +218,8 @@ def sync(request: dict):
 def finilize(request: dict):
     service = request['object']
     dns_endpoint_name = f"dns-endpoint-{service['metadata']['name']}"
-    
+    service_loadbalancer_label_value = service['metadata']['labels']['use-as-loadbalancer']
+    is_private = "internal" in service_loadbalancer_label_value
     config.load_incluster_config()
     v1 = client.CoreV1Api()
     custom_api = client.CustomObjectsApi()
@@ -220,12 +238,13 @@ def finilize(request: dict):
         else:
             print(f"Failed to delete {dns_endpoint_name}: {e}")
             raise e
-    result = v1.delete_namespaced_service(
-        name=f"{service['metadata']['name']}-internal",
-        namespace=service['metadata']['namespace']
-    )
-    print(result)
-    print(f"Successfully deleted internal service {service['metadata']['name']}-internal")
+    if not is_private:
+        result = v1.delete_namespaced_service(
+            name=f"{service['metadata']['name']}-internal",
+            namespace=service['metadata']['namespace']
+        )
+        print(result)
+        print(f"Successfully deleted internal service {service['metadata']['name']}-internal")
     return {
         "status": {
             "loadBalancer": {
