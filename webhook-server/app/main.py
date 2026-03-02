@@ -243,11 +243,12 @@ def finilize(request: dict):
                 name=f"{service['metadata']['name']}-internal",
                 namespace=service['metadata']['namespace']
             )
+            print(result)
+            print(f"Successfully deleted internal service {service['metadata']['name']}-internal")
         except ApiException as e:
             if e.status == 404:
                 print(f"internal service not found. Nothing to delete.")
-        print(result)
-        print(f"Successfully deleted internal service {service['metadata']['name']}-internal")
+        
     return {
         "status": {
             "loadBalancer": {
