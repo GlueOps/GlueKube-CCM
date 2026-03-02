@@ -238,10 +238,14 @@ def finilize(request: dict):
             print(f"Failed to delete {dns_endpoint_name}: {e}")
             raise e
     if not is_private:
-        result = v1.delete_namespaced_service(
-            name=f"{service['metadata']['name']}-internal",
-            namespace=service['metadata']['namespace']
-        )
+        try:
+            result = v1.delete_namespaced_service(
+                name=f"{service['metadata']['name']}-internal",
+                namespace=service['metadata']['namespace']
+            )
+        except ApiException as e:
+            if e.status == 404:
+                print(f"internal service not found. Nothing to delete.")
         print(result)
         print(f"Successfully deleted internal service {service['metadata']['name']}-internal")
     return {
