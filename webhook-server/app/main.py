@@ -35,7 +35,7 @@ def apply_custom_object(group, version, namespace, plural, body):
         if e.status == 409:
             print(f"{resource_name} already exists. Patching (updating)...")
             try:
-                custom_api.patch_namespaced_custom_object(
+                custom_api.replace_namespaced_custom_object(
                     group=group,
                     version=version,
                     namespace=namespace,
@@ -187,16 +187,16 @@ def sync(request: dict):
         print(f"Successfully created internal service {internal_service.metadata.name}")
     except ApiException as e:
         if e.status == 409:
-            print(f"Internal service {internal_service.metadata.name} already exists. Patching (updating)...")
+            print(f"Internal service {internal_service.metadata.name} already exists. Replacing (updating)...")
             try:
-                v1.patch_namespaced_service(
+                v1.replace_namespaced_service(
                     name=internal_service.metadata.name,
                     namespace=service['metadata']['namespace'],
                     body=internal_service
                 )
                 print(f"Successfully updated internal service {internal_service.metadata.name}")
             except ApiException as e_patch:
-                print(f"Failed to patch internal service: {e_patch}")
+                print(f"Failed to replace internal service: {e_patch}")
         else:
             print(f"Failed to create internal service: {e}")
             raise e
