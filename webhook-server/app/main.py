@@ -74,7 +74,7 @@ def sync(request: dict):
     service = request['object']
     service_loadbalancer_label_value = service['metadata']['labels']['use-as-loadbalancer']
     is_private = "internal" in service_loadbalancer_label_value
-    dnsName = service['metadata']['labels']['gluekube-dns']
+    dnsName = service['metadata']['annotations']['gluekube-dns']
     dns_endpoint = {
         "apiVersion": "externaldns.k8s.io/v1alpha1",
         "kind": "DNSEndpoint",
