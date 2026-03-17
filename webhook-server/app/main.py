@@ -35,6 +35,11 @@ def apply_custom_object(group, version, namespace, plural, body):
         if e.status == 409:
             print(f"{resource_name} already exists. Patching (updating)...")
             try:
+                # 1. Fetch the existing object
+                existing_obj = custom_api.get_namespaced_custom_object(
+                    group=group, version=version, namespace=namespace, plural=plural, name=resource_name
+                )
+                body["metadata"]["resourceVersion"] = existing_obj["metadata"]["resourceVersion"]
                 custom_api.replace_namespaced_custom_object(
                     group=group,
                     version=version,
