@@ -22,7 +22,7 @@ mdurl==0.1.2
 pydantic==2.12.5
 pydantic-extra-types==2.11.1
 pydantic-settings==2.13.1
-pydantic_core==2.43.0
+pydantic_core==2.44.0
 Pygments==2.19.2
 python-dotenv==1.2.2
 python-multipart==0.0.22
