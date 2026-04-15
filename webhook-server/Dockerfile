@@ -1,5 +1,5 @@
 
-FROM python:3.14@sha256:b0a637ba74875a5f9ce0a7844cd8e2b76e97650072d0f455410182a1b7d6d62f
+FROM python:3.14@sha256:63fdc2bca05b142ef64d05e8f9dbc4e8bf9f51294824db5c3d8b10f419fe1bdd
 
 
 WORKDIR /code
