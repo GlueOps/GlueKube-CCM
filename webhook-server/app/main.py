@@ -21,36 +21,31 @@ def apply_custom_object(group, version, namespace, plural, body):
     resource_name = body["metadata"]["name"]
 
     try:
-        print(f"Attempting to create {resource_name}...")
-        custom_api.create_namespaced_custom_object(
+        existing_obj = custom_api.get_namespaced_custom_object(
+            group=group, version=version, namespace=namespace, plural=plural, name=resource_name
+        )
+        body["metadata"]["resourceVersion"] = existing_obj["metadata"]["resourceVersion"]
+        print(f"{resource_name} already exists. Replacing (updating)...")
+        custom_api.replace_namespaced_custom_object(
             group=group,
             version=version,
             namespace=namespace,
             plural=plural,
+            name=resource_name, 
             body=body
         )
-        print(f"Successfully created {resource_name}")
-
+        print(f"Successfully updated {resource_name}")
     except ApiException as e:
-        if e.status == 409:
-            print(f"{resource_name} already exists. Patching (updating)...")
-            try:
-                # 1. Fetch the existing object
-                existing_obj = custom_api.get_namespaced_custom_object(
-                    group=group, version=version, namespace=namespace, plural=plural, name=resource_name
-                )
-                body["metadata"]["resourceVersion"] = existing_obj["metadata"]["resourceVersion"]
-                custom_api.replace_namespaced_custom_object(
-                    group=group,
-                    version=version,
-                    namespace=namespace,
-                    plural=plural,
-                    name=resource_name, 
-                    body=body
-                )
-                print(f"Successfully updated {resource_name}")
-            except ApiException as e_patch:
-                print(f"Failed to patch: {e_patch}")
+        if e.status == 404:
+            print(f"Attempting to create {resource_name}...")
+            custom_api.create_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                body=body
+            )
+            print(f"Successfully created {resource_name}")
         else:
             raise e
 
