@@ -175,6 +175,7 @@ def sync(request: dict):
             type="ClusterIP",
             external_i_ps=public_ips+private_ips,
             internal_traffic_policy="Local",
+            external_traffic_policy="Local",
             ip_family_policy=service['spec'].get('ipFamilyPolicy'),
             session_affinity=service['spec'].get('sessionAffinity')
         )
