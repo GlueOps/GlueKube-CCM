@@ -2,7 +2,7 @@ kubernetes==35.0.0
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.14.2
-certifi==2026.6.17
+certifi==2026.7.22
 click==8.4.2
 dnspython==2.8.0
 email-validator==2.3.0
