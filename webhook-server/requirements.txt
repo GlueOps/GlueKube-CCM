@@ -6,7 +6,7 @@ certifi==2026.10.19
 click==8.5.0
 dnspython==2.9.0
 email-validator==2.3.0
-fastapi==0.142.1
+fastapi==0.142.2
 fastapi-cli==0.0.32
 fastapi-cloud-cli==0.26.0
 fastar==0.12.0
