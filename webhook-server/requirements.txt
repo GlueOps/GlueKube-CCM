@@ -19,7 +19,7 @@ Jinja2==3.1.6
 markdown-it-py==4.2.0
 MarkupSafe==3.0.4
 mdurl==0.1.2
-pydantic==2.14.0
+pydantic==2.14.1
 pydantic-extra-types==2.11.1
 pydantic-settings==2.15.0
 Pygments==2.21.0
